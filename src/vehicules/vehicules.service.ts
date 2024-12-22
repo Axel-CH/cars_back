@@ -1,75 +1,79 @@
-import { Injectable } from '@nestjs/common';
-import { Vehicle, VehicleType, FuelType } from './types/vehicle.types';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { VehicleEntity } from './entities/vehicle.entity';
+import { Vehicle, VehicleType } from './types/vehicle.types';
 
 @Injectable()
 export class VehiculesService {
-  private vehicles: Vehicle[] = [
-    {
-      id: '1',
-      manufacturer: 'Toyota',
-      model: 'RAV4',
-      year: 2023,
-      type: VehicleType.SUV,
-      price: 32000,
-      fuelType: FuelType.HYBRID,
-      transmission: 'Automatic',
-      mileage: 0,
-      features: ['Backup Camera', 'Bluetooth', 'Navigation'],
-      images: ['rav4-1.jpg', 'rav4-2.jpg'],
-      description: 'Brand new Toyota RAV4 Hybrid',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: '2',
-      manufacturer: 'Tesla',
-      model: 'Model 3',
-      year: 2023,
-      type: VehicleType.ELECTRIC,
-      price: 45000,
-      fuelType: FuelType.ELECTRIC,
-      transmission: 'Automatic',
-      features: ['Autopilot', 'Premium Sound', 'Glass Roof'],
-      images: ['model3-1.jpg', 'model3-2.jpg'],
-      description: 'Tesla Model 3 Long Range',
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  ];
+  constructor(
+    @InjectRepository(VehicleEntity)
+    private vehiclesRepository: Repository<VehicleEntity>,
+  ) {}
 
-  listVehicules(filters: { manufacturer?: string; type?: string; page: number; limit: number }) {
+  async listVehicules(filters: { manufacturer?: string; type?: string; page: number; limit: number }) {
     const { manufacturer, type, page, limit } = filters;
-    let filteredVehicules = this.vehicles;
+    
+    const queryBuilder = this.vehiclesRepository.createQueryBuilder('vehicle');
 
     if (manufacturer) {
-      filteredVehicules = filteredVehicules.filter(vehicle => vehicle.manufacturer === manufacturer);
+      queryBuilder.andWhere('vehicle.manufacturer = :manufacturer', { manufacturer });
     }
 
     if (type) {
-      filteredVehicules = filteredVehicules.filter(vehicle => vehicle.type === type);
+      queryBuilder.andWhere('vehicle.type = :type', { type });
     }
 
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
+    const [vehicles, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
 
     return {
-      data: filteredVehicules.slice(startIndex, endIndex),
-      total: filteredVehicules.length,
+      data: vehicles,
+      total,
       page,
       limit,
     };
   }
 
-  getVehicleDetails(id: string): Vehicle | undefined {
-    return this.vehicles.find(vehicle => vehicle.id === id);
+  async getVehicleDetails(id: string): Promise<Vehicle> {
+    const vehicle = await this.vehiclesRepository.findOne({ where: { id } });
+    if (!vehicle) {
+      throw new NotFoundException(`Vehicle with ID ${id} not found`);
+    }
+    return vehicle;
   }
 
-  getManufacturers(): string[] {
-    const manufacturers = this.vehicles.map(vehicle => vehicle.manufacturer);
-    return Array.from(new Set(manufacturers));
+  async getManufacturers(): Promise<string[]> {
+    const manufacturers = await this.vehiclesRepository
+      .createQueryBuilder('vehicle')
+      .select('DISTINCT vehicle.manufacturer', 'manufacturer')
+      .getRawMany();
+    
+    return manufacturers.map(m => m.manufacturer);
   }
 
   getVehicleTypes(): VehicleType[] {
     return Object.values(VehicleType);
+  }
+
+  async create(vehicleData: Partial<Vehicle>): Promise<Vehicle> {
+    const vehicle = this.vehiclesRepository.create(vehicleData);
+    return await this.vehiclesRepository.save(vehicle);
+  }
+
+  async update(id: string, vehicleData: Partial<Vehicle>): Promise<Vehicle> {
+    const vehicle = await this.getVehicleDetails(id);
+    Object.assign(vehicle, vehicleData);
+    return await this.vehiclesRepository.save(vehicle);
+  }
+
+  async remove(id: string): Promise<{ deleted: boolean }> {
+    const result = await this.vehiclesRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Vehicle with ID ${id} not found`);
+    }
+    return { deleted: true };
   }
 }

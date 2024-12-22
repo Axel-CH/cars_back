@@ -7,7 +7,7 @@ export class VehiculesController {
   constructor(private readonly vehiculesService: VehiculesService) {}
 
   @Get('manufacturers')
-  getManufacturers(): string[] {
+  async getManufacturers(): Promise<string[]> {
     return this.vehiculesService.getManufacturers(); 
   }
 
@@ -17,7 +17,7 @@ export class VehiculesController {
   }
 
   @Get(':id')
-  getVehicleDetails(@Param('id') id: string): Vehicle | undefined {
+  getVehicleDetails(@Param('id') id: string): Promise<Vehicle | undefined> {
     return this.vehiculesService.getVehicleDetails(id);
   }
 
