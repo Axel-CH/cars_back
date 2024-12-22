@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseFilters } from '@nestjs/common';
 import { VehiculesService } from './vehicules.service';
 import { Vehicle, VehicleType } from './types/vehicle.types';
 
@@ -17,7 +17,7 @@ export class VehiculesController {
   }
 
   @Get(':id')
-  getVehicleDetails(@Param('id') id: string): Promise<Vehicle | undefined> {
+  async getVehicleDetails(@Param('id') id: string): Promise<Vehicle> {
     return this.vehiculesService.getVehicleDetails(id);
   }
 

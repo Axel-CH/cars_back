@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VehicleEntity } from './entities/vehicle.entity';
 import { Vehicle, VehicleType } from './types/vehicle.types';
+import { InvalidUUIDException } from '../common/exceptions/invalid-uuid.exception';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class VehiculesService {
@@ -38,9 +40,13 @@ export class VehiculesService {
   }
 
   async getVehicleDetails(id: string): Promise<Vehicle> {
+    if (!isUUID(id)) {
+      throw new InvalidUUIDException(id);
+    }
+
     const vehicle = await this.vehiclesRepository.findOne({ where: { id } });
     if (!vehicle) {
-      throw new NotFoundException(`Vehicle with ID ${id} not found`);
+      throw new NotFoundException(`Vehicle with ID "${id}" not found`);
     }
     return vehicle;
   }
