@@ -1,68 +1,52 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNumber, IsEnum, IsArray, IsOptional } from 'class-validator';
 import { VehiculeType, FuelType } from '../types/vehicule.types';
 
-@Entity('vehicles')
-export class VehicleEntity {
-  @ApiProperty({ description: 'The unique identifier of the vehicle' })
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class CreateVehicleDto {
   @ApiProperty({ description: 'Vehicle manufacturer' })
-  @Column()
+  @IsString()
   manufacturer: string;
 
   @ApiProperty({ description: 'Vehicle model' })
-  @Column()
+  @IsString()
   model: string;
 
   @ApiProperty({ description: 'Manufacturing year' })
-  @Column()
+  @IsNumber()
   year: number;
 
   @ApiProperty({ enum: VehiculeType, description: 'Type of vehicle' })
-  @Column({
-    type: 'enum',
-    enum: VehiculeType,
-  })
+  @IsEnum(VehiculeType)
   type: VehiculeType;
 
   @ApiProperty({ description: 'Vehicle price' })
-  @Column('decimal', { precision: 10, scale: 2 })
+  @IsNumber()
   price: number;
 
   @ApiProperty({ enum: FuelType, description: 'Type of fuel' })
-  @Column({
-    type: 'enum',
-    enum: FuelType,
-  })
+  @IsEnum(FuelType)
   fuelType: FuelType;
 
   @ApiProperty({ description: 'Transmission type' })
-  @Column()
+  @IsString()
   transmission: string;
 
   @ApiProperty({ required: false, description: 'Vehicle mileage' })
-  @Column({ nullable: true })
+  @IsOptional()
+  @IsNumber()
   mileage?: number;
 
   @ApiProperty({ type: [String], description: 'Vehicle features' })
-  @Column('text', { array: true, nullable: false, default: '{}' })
+  @IsArray()
+  @IsString({ each: true })
   features: string[];
 
   @ApiProperty({ type: [String], description: 'Vehicle images URLs' })
-  @Column('text', { array: true, nullable: false, default: '{}' })
+  @IsArray()
+  @IsString({ each: true })
   images: string[];
 
   @ApiProperty({ description: 'Vehicle description' })
-  @Column('text')
+  @IsString()
   description: string;
-
-  @ApiProperty({ description: 'Creation timestamp' })
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @ApiProperty({ description: 'Last update timestamp' })
-  @UpdateDateColumn()
-  updatedAt: Date;
 } 

@@ -5,6 +5,8 @@ import { VehicleEntity } from './entities/vehicule.entity';
 import { Vehicle, VehiculeType } from './types/vehicule.types';
 import { InvalidUUIDException } from '../common/exceptions/invalid-uuid.exception';
 import { isUUID } from 'class-validator';
+import { CreateVehicleDto } from './dto/create-vehicle.dto';
+import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 
 @Injectable()
 export class VehiculesService {
@@ -44,7 +46,7 @@ export class VehiculesService {
       throw new InvalidUUIDException(id);
     }
 
-    const vehicle = await this.vehiclesRepository.findOne({ where: { id } });
+    const vehicle = await this.findOne(id);
     if (!vehicle) {
       throw new NotFoundException(`Vehicle with ID "${id}" not found`);
     }
@@ -64,12 +66,23 @@ export class VehiculesService {
     return Object.values(VehiculeType);
   }
 
-  async create(vehicleData: Partial<Vehicle>): Promise<Vehicle> {
+  async create(vehicleData: CreateVehicleDto): Promise<Vehicle> {
     const vehicle = this.vehiclesRepository.create(vehicleData);
     return await this.vehiclesRepository.save(vehicle);
   }
 
-  async update(id: string, vehicleData: Partial<Vehicle>): Promise<Vehicle> {
+  findAll() {
+    return this.vehiclesRepository.find();
+  }
+
+  findOne(id: string) {
+    if (!isUUID(id)) {
+      throw new InvalidUUIDException(id);
+    }
+    return this.vehiclesRepository.findOneBy({ id });
+  }
+
+  async update(id: string, vehicleData: UpdateVehicleDto): Promise<Vehicle> {
     const vehicle = await this.getVehicleDetails(id);
     Object.assign(vehicle, vehicleData);
     return await this.vehiclesRepository.save(vehicle);
