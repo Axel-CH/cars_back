@@ -1,27 +1,39 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { VehiculesController } from './vehicules.controller';
 import { VehiculesService } from './vehicules.service';
-import { Vehicle } from './types/vehicule.types';
+import { Vehicle, VehiculeType, FuelType } from './types/vehicule.types';
 
 describe('VehiculesController', () => {
   let controller: VehiculesController;
   let service: VehiculesService;
 
   const mockVehicle: Vehicle = {
-    id: '1',
-    brand: 'Toyota',
-    model: 'Camry',
-    year: 2020,
-    price: 25000,
-    mileage: 30000,
+    id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+    manufacturer: 'Toyota',
+    model: 'RAV4',
+    year: 2023,
+    type: VehiculeType.SUV,
+    price: 32000.00,
+    fuelType: FuelType.HYBRID,
+    transmission: 'Automatic',
+    mileage: 0,
+    features: ['Bluetooth', 'Backup Camera'],
+    images: ['rav4-front.jpg'],
+    description: 'New Toyota RAV4',
+    createdAt: new Date(),
+    updatedAt: new Date()
   };
 
   const mockVehiculesService = {
-    findAll: jest.fn().mockResolvedValue([mockVehicle]),
-    findOne: jest.fn().mockResolvedValue(mockVehicle),
-    create: jest.fn().mockResolvedValue(mockVehicle),
-    update: jest.fn().mockResolvedValue(mockVehicle),
-    remove: jest.fn().mockResolvedValue({ deleted: true }),
+    listVehicules: jest.fn().mockResolvedValue({ 
+      data: [mockVehicle], 
+      total: 1, 
+      page: 1, 
+      limit: 10 
+    }),
+    getVehicleDetails: jest.fn().mockResolvedValue(mockVehicle),
+    getManufacturers: jest.fn().mockResolvedValue(['Toyota', 'Honda']),
+    getVehiculeTypes: jest.fn().mockReturnValue(Object.values(VehiculeType))
   };
 
   beforeEach(async () => {
@@ -43,55 +55,39 @@ describe('VehiculesController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('findAll', () => {
-    it('should return an array of vehicles', async () => {
-      const result = await controller.findAll();
-      expect(result).toEqual([mockVehicle]);
-      expect(service.findAll).toHaveBeenCalled();
+  describe('listVehicules', () => {
+    it('should return paginated vehicles', async () => {
+      const result = await controller.listVehicules();
+      expect(result.data).toEqual([mockVehicle]);
+      expect(service.listVehicules).toHaveBeenCalledWith({ 
+        page: 1, 
+        limit: 10 
+      });
     });
   });
 
-  describe('findOne', () => {
+  describe('getVehicleDetails', () => {
     it('should return a single vehicle', async () => {
-      const result = await controller.findOne('1');
+      const uuid = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+      const result = await controller.getVehicleDetails(uuid);
       expect(result).toEqual(mockVehicle);
-      expect(service.findOne).toHaveBeenCalledWith('1');
+      expect(service.getVehicleDetails).toHaveBeenCalledWith(uuid);
     });
   });
 
-  describe('create', () => {
-    it('should create a new vehicle', async () => {
-      const newVehicle = {
-        brand: 'Toyota',
-        model: 'Camry',
-        year: 2020,
-        price: 25000,
-        mileage: 30000,
-      };
-      const result = await controller.create(newVehicle);
-      expect(result).toEqual(mockVehicle);
-      expect(service.create).toHaveBeenCalledWith(newVehicle);
+  describe('getManufacturers', () => {
+    it('should return list of manufacturers', async () => {
+      const result = await controller.getManufacturers();
+      expect(result).toEqual(['Toyota', 'Honda']);
+      expect(service.getManufacturers).toHaveBeenCalled();
     });
   });
 
-  describe('update', () => {
-    it('should update a vehicle', async () => {
-      const updateVehicle = {
-        brand: 'Toyota',
-        model: 'Camry',
-        year: 2021,
-      };
-      const result = await controller.update('1', updateVehicle);
-      expect(result).toEqual(mockVehicle);
-      expect(service.update).toHaveBeenCalledWith('1', updateVehicle);
-    });
-  });
-
-  describe('remove', () => {
-    it('should remove a vehicle', async () => {
-      const result = await controller.remove('1');
-      expect(result).toEqual({ deleted: true });
-      expect(service.remove).toHaveBeenCalledWith('1');
+  describe('getVehiculeTypes', () => {
+    it('should return list of vehicle types', () => {
+      const result = controller.getVehiculeTypes();
+      expect(result).toEqual(Object.values(VehiculeType));
+      expect(service.getVehiculeTypes).toHaveBeenCalled();
     });
   });
 }); 

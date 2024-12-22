@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { VehiculesService } from './vehicules.service';
-import { Vehicle } from './types/vehicule.types';
+import { Vehicle, VehiculeType, FuelType } from './types/vehicule.types';
 import { NotFoundException } from '@nestjs/common';
 import { VehicleSeedService } from './seed/seed.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -12,12 +12,20 @@ describe('VehiculesService', () => {
   let seedService: VehicleSeedService;
 
   const mockVehicle: Vehicle = {
-    id: '1',
+    id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
     manufacturer: 'Toyota',
-    model: 'Camry',
-    year: 2020,
-    price: 25000,
-    mileage: 30000,
+    model: 'RAV4',
+    year: 2023,
+    type: VehiculeType.SUV,
+    price: 32000.00,
+    fuelType: FuelType.HYBRID,
+    transmission: 'Automatic',
+    mileage: 0,
+    features: ['Bluetooth', 'Backup Camera'],
+    images: ['rav4-front.jpg'],
+    description: 'New Toyota RAV4',
+    createdAt: new Date(),
+    updatedAt: new Date()
   };
 
   beforeEach(async () => {
@@ -27,84 +35,62 @@ describe('VehiculesService', () => {
         VehicleSeedService,
         {
           provide: getRepositoryToken(VehicleEntity),
-          useClass: Repository,
+          useValue: {
+            createQueryBuilder: jest.fn(() => ({
+              andWhere: jest.fn().mockReturnThis(),
+              skip: jest.fn().mockReturnThis(),
+              take: jest.fn().mockReturnThis(),
+              getManyAndCount: jest.fn().mockResolvedValue([[mockVehicle], 1]),
+              select: jest.fn().mockReturnThis(),
+              getRawMany: jest.fn().mockResolvedValue([{ manufacturer: 'Toyota' }])
+            })),
+            findOne: jest.fn().mockResolvedValue(mockVehicle)
+          }
         },
       ],
     }).compile();
 
     service = module.get<VehiculesService>(VehiculesService);
     seedService = module.get<VehicleSeedService>(VehicleSeedService);
-
-    // Seed the database before each test
-    await seedService.seed();
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  describe('findAll', () => {
-    it('should return an array of vehicles', async () => {
-      const result = await service.listVehicules();
-      expect(Array.isArray(result)).toBe(true);
+  describe('listVehicules', () => {
+    it('should return paginated vehicles', async () => {
+      const result = await service.listVehicules({ page: 1, limit: 10 });
+      expect(result.data).toEqual([mockVehicle]);
+      expect(result.total).toBe(1);
     });
   });
 
-  describe('findOne', () => {
+  describe('getVehicleDetails', () => {
     it('should return a vehicle by id', async () => {
-      jest.spyOn(service, 'findOne').mockResolvedValue(mockVehicle);
-      const result = await service.findOne('1');
+      const uuid = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+      const result = await service.getVehicleDetails(uuid);
       expect(result).toEqual(mockVehicle);
     });
 
     it('should throw NotFoundException when vehicle is not found', async () => {
-      jest.spyOn(service, 'findOne').mockRejectedValue(new NotFoundException());
-      await expect(service.findOne('999')).rejects.toThrow(NotFoundException);
+      jest.spyOn(service['vehiclesRepository'], 'findOne').mockResolvedValue(null);
+      const uuid = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+      await expect(service.getVehicleDetails(uuid)).rejects.toThrow(NotFoundException);
     });
   });
 
-  describe('create', () => {
-    it('should create a new vehicle', async () => {
-      const newVehicle = {
-        brand: 'Toyota',
-        model: 'Camry',
-        year: 2020,
-        price: 25000,
-        mileage: 30000,
-      };
-      jest.spyOn(service, 'create').mockResolvedValue({ ...newVehicle, id: '1' });
-      const result = await service.create(newVehicle);
-      expect(result).toHaveProperty('id');
-      expect(result.brand).toBe(newVehicle.brand);
+  describe('getManufacturers', () => {
+    it('should return list of manufacturers', async () => {
+      const result = await service.getManufacturers();
+      expect(result).toEqual(['Toyota']);
     });
   });
 
-  describe('update', () => {
-    it('should update a vehicle', async () => {
-      const updateVehicle = {
-        year: 2021,
-      };
-      jest.spyOn(service, 'update').mockResolvedValue({ ...mockVehicle, ...updateVehicle });
-      const result = await service.update('1', updateVehicle);
-      expect(result.year).toBe(updateVehicle.year);
-    });
-
-    it('should throw NotFoundException when updating non-existent vehicle', async () => {
-      jest.spyOn(service, 'update').mockRejectedValue(new NotFoundException());
-      await expect(service.update('999', { year: 2021 })).rejects.toThrow(NotFoundException);
-    });
-  });
-
-  describe('remove', () => {
-    it('should remove a vehicle', async () => {
-      jest.spyOn(service, 'remove').mockResolvedValue({ deleted: true });
-      const result = await service.remove('1');
-      expect(result).toEqual({ deleted: true });
-    });
-
-    it('should throw NotFoundException when removing non-existent vehicle', async () => {
-      jest.spyOn(service, 'remove').mockRejectedValue(new NotFoundException());
-      await expect(service.remove('999')).rejects.toThrow(NotFoundException);
+  describe('getVehiculeTypes', () => {
+    it('should return list of vehicle types', () => {
+      const result = service.getVehiculeTypes();
+      expect(result).toEqual(Object.values(VehiculeType));
     });
   });
 }); 
