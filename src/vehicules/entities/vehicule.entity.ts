@@ -1,5 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { VehicleType, FuelType } from '../types/vehicle.types';
+import { VehiculeType, FuelType } from '../types/vehicule.types';
 
 @Entity('vehicles')
 export class VehicleEntity {
@@ -17,9 +17,9 @@ export class VehicleEntity {
 
   @Column({
     type: 'enum',
-    enum: VehicleType
+    enum: VehiculeType
   })
-  type: VehicleType;
+  type: VehiculeType;
 
   @Column('decimal', { precision: 10, scale: 2 })
   price: number;

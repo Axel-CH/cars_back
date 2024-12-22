@@ -1,6 +1,6 @@
 export type UUID = string;
 
-export enum VehicleType {
+export enum VehiculeType {
   SUV = 'SUV',
   SEDAN = 'SEDAN',
   TRUCK = 'TRUCK',
@@ -22,7 +22,7 @@ export interface Vehicle {
   manufacturer: string;
   model: string;
   year: number;
-  type: VehicleType;
+  type: VehiculeType;
   price: number;
   fuelType: FuelType;
   transmission: string;

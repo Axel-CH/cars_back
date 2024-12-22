@@ -1,14 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { VehiculesService } from './vehicules.service';
-import { Vehicle } from './types/vehicle.types';
+import { Vehicle } from './types/vehicule.types';
 import { NotFoundException } from '@nestjs/common';
+import { VehicleSeedService } from './seed/seed.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { VehicleEntity } from './entities/vehicule.entity';
+import { Repository } from 'typeorm';
 
 describe('VehiculesService', () => {
   let service: VehiculesService;
+  let seedService: VehicleSeedService;
 
   const mockVehicle: Vehicle = {
     id: '1',
-    brand: 'Toyota',
+    manufacturer: 'Toyota',
     model: 'Camry',
     year: 2020,
     price: 25000,
@@ -17,10 +22,21 @@ describe('VehiculesService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [VehiculesService],
+      providers: [
+        VehiculesService,
+        VehicleSeedService,
+        {
+          provide: getRepositoryToken(VehicleEntity),
+          useClass: Repository,
+        },
+      ],
     }).compile();
 
     service = module.get<VehiculesService>(VehiculesService);
+    seedService = module.get<VehicleSeedService>(VehicleSeedService);
+
+    // Seed the database before each test
+    await seedService.seed();
   });
 
   it('should be defined', () => {
@@ -29,7 +45,7 @@ describe('VehiculesService', () => {
 
   describe('findAll', () => {
     it('should return an array of vehicles', async () => {
-      const result = await service.findAll();
+      const result = await service.listVehicules();
       expect(Array.isArray(result)).toBe(true);
     });
   });

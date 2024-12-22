@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query, UseFilters } from '@nestjs/common';
 import { VehiculesService } from './vehicules.service';
-import { Vehicle, VehicleType } from './types/vehicle.types';
+import { Vehicle, VehiculeType } from './types/vehicule.types';
 
 @Controller('vehicules')
 export class VehiculesController {
@@ -12,8 +12,8 @@ export class VehiculesController {
   }
 
   @Get('types')
-  getVehicleTypes(): VehicleType[] {
-    return this.vehiculesService.getVehicleTypes();
+  getVehiculeTypes(): VehiculeType[] {
+    return this.vehiculesService.getVehiculeTypes();
   }
 
   @Get(':id')

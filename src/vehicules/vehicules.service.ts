@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { VehicleEntity } from './entities/vehicle.entity';
-import { Vehicle, VehicleType } from './types/vehicle.types';
+import { VehicleEntity } from './entities/vehicule.entity';
+import { Vehicle, VehiculeType } from './types/vehicule.types';
 import { InvalidUUIDException } from '../common/exceptions/invalid-uuid.exception';
 import { isUUID } from 'class-validator';
 
@@ -60,8 +60,8 @@ export class VehiculesService {
     return manufacturers.map(m => m.manufacturer);
   }
 
-  getVehicleTypes(): VehicleType[] {
-    return Object.values(VehicleType);
+  getVehiculeTypes(): VehiculeType[] {
+    return Object.values(VehiculeType);
   }
 
   async create(vehicleData: Partial<Vehicle>): Promise<Vehicle> {

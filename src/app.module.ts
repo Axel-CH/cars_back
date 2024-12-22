@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { VehiculesModule } from './vehicules/vehicules.module';
-import { VehicleEntity } from './vehicules/entities/vehicle.entity';
+import { VehicleEntity } from './vehicules/entities/vehicule.entity';
 
 @Module({
   imports: [
