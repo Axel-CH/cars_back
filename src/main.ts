@@ -6,22 +6,28 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
+  // Enable CORS
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
+
   // Validation pipe for DTO validation
   app.useGlobalPipes(new ValidationPipe());
 
   // Swagger documentation setup
   const config = new DocumentBuilder()
-    .setTitle('Vehicles API')
-    .setDescription('The vehicles API documentation')
+    .setTitle('Vehicle API')
+    .setDescription('The Vehicle API description')
     .setVersion('1.0')
-    .addTag('vehicles')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 
-  // Use PORT from environment variable or fallback to 3000
-  const port = process.env.PORT || 3000;
+  // Use PORT from environment variable or fallback to 4000
+  const port = process.env.PORT || 4000;
   await app.listen(port);
   
   console.log(`Application is running on: http://localhost:${port}`);
