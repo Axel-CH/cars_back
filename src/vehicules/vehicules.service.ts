@@ -1,0 +1,98 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { VehicleEntity } from './entities/vehicule.entity';
+import { Vehicle, VehiculeType } from './types/vehicule.types';
+import { InvalidUUIDException } from '../common/exceptions/invalid-uuid.exception';
+import { isUUID } from 'class-validator';
+import { CreateVehicleDto } from './dto/create-vehicle.dto';
+import { UpdateVehicleDto } from './dto/update-vehicle.dto';
+
+@Injectable()
+export class VehiculesService {
+  constructor(
+    @InjectRepository(VehicleEntity)
+    private vehiclesRepository: Repository<VehicleEntity>,
+  ) {}
+
+  async listVehicules(filters: { manufacturer?: string; type?: string; page: number; limit: number }) {
+    const { manufacturer, type, page, limit } = filters;
+    
+    const queryBuilder = this.vehiclesRepository.createQueryBuilder('vehicle');
+
+    if (manufacturer) {
+      queryBuilder.andWhere('vehicle.manufacturer = :manufacturer', { manufacturer });
+    }
+
+    if (type) {
+      queryBuilder.andWhere('vehicle.type = :type', { type });
+    }
+
+    const [vehicles, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      data: vehicles,
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async getVehicleDetails(id: string): Promise<Vehicle> {
+    if (!isUUID(id)) {
+      throw new InvalidUUIDException(id);
+    }
+
+    const vehicle = await this.findOne(id);
+    if (!vehicle) {
+      throw new NotFoundException(`Vehicle with ID "${id}" not found`);
+    }
+    return vehicle;
+  }
+
+  async getManufacturers(): Promise<string[]> {
+    const manufacturers = await this.vehiclesRepository
+      .createQueryBuilder('vehicle')
+      .select('DISTINCT vehicle.manufacturer', 'manufacturer')
+      .getRawMany();
+    
+    return manufacturers.map(m => m.manufacturer);
+  }
+
+  getVehiculeTypes(): VehiculeType[] {
+    return Object.values(VehiculeType);
+  }
+
+  async create(vehicleData: CreateVehicleDto): Promise<Vehicle> {
+    const vehicle = this.vehiclesRepository.create(vehicleData);
+    return await this.vehiclesRepository.save(vehicle);
+  }
+
+  findAll() {
+    return this.vehiclesRepository.find();
+  }
+
+  findOne(id: string) {
+    if (!isUUID(id)) {
+      throw new InvalidUUIDException(id);
+    }
+    return this.vehiclesRepository.findOneBy({ id });
+  }
+
+  async update(id: string, vehicleData: UpdateVehicleDto): Promise<Vehicle> {
+    const vehicle = await this.getVehicleDetails(id);
+    Object.assign(vehicle, vehicleData);
+    return await this.vehiclesRepository.save(vehicle);
+  }
+
+  async remove(id: string): Promise<{ deleted: boolean }> {
+    const result = await this.vehiclesRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Vehicle with ID ${id} not found`);
+    }
+    return { deleted: true };
+  }
+}
