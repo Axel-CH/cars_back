@@ -34,10 +34,39 @@ export class VehiculesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all vehicles' })
-  @ApiResponse({ status: 200, description: 'Return all vehicles.', type: [VehicleEntity] })
-  findAll() {
-    return this.vehiculesService.findAll();
+  @ApiOperation({ summary: 'Get all vehicles with filtering, sorting, and pagination' })
+  @ApiResponse({ status: 200, description: 'Return filtered, sorted and paginated vehicles.', type: [VehicleEntity] })
+  @ApiQuery({ name: 'manufacturer', required: false, description: 'Filter by manufacturer' })
+  @ApiQuery({ name: 'type', required: false, description: 'Filter by vehicle type' })
+  @ApiQuery({ name: 'year', required: false, description: 'Filter by year' })
+  @ApiQuery({ name: 'sortBy', required: false, enum: ['price', 'year'], description: 'Sort by field' })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Sort order' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Items per page (default: 10)' })
+  findAll(
+    @Query('manufacturer') manufacturer?: string,
+    @Query('type') type?: string,
+    @Query('year') year?: number,
+    @Query('sortBy') sortBy?: 'price' | 'year',
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this.vehiculesService.findAll({
+      filters: {
+        manufacturer,
+        type,
+        year: year ? Number(year) : undefined,
+      },
+      sort: {
+        field: sortBy,
+        order: sortOrder,
+      },
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+      },
+    });
   }
 
   @Get(':id')

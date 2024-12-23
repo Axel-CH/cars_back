@@ -1,98 +1,106 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { VehicleEntity } from './entities/vehicule.entity';
-import { Vehicle, VehiculeType } from './types/vehicule.types';
-import { InvalidUUIDException } from '../common/exceptions/invalid-uuid.exception';
-import { isUUID } from 'class-validator';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
+import { VehicleEntity } from './entities/vehicule.entity';
+import { VehiculeType } from './types/vehicule.types';
+
+interface QueryOptions {
+  filters: {
+    manufacturer?: string;
+    type?: string;
+    year?: number;
+  };
+  sort: {
+    field?: 'price' | 'year';
+    order?: 'ASC' | 'DESC';
+  };
+  pagination: {
+    page: number;
+    limit: number;
+  };
+}
 
 @Injectable()
 export class VehiculesService {
   constructor(
     @InjectRepository(VehicleEntity)
-    private vehiclesRepository: Repository<VehicleEntity>,
+    private vehiculesRepository: Repository<VehicleEntity>,
   ) {}
 
-  async listVehicules(filters: { manufacturer?: string; type?: string; page: number; limit: number }) {
-    const { manufacturer, type, page, limit } = filters;
-    
-    const queryBuilder = this.vehiclesRepository.createQueryBuilder('vehicle');
+  create(createVehicleDto: CreateVehicleDto) {
+    const vehicle = this.vehiculesRepository.create(createVehicleDto);
+    return this.vehiculesRepository.save(vehicle);
+  }
 
-    if (manufacturer) {
-      queryBuilder.andWhere('vehicle.manufacturer = :manufacturer', { manufacturer });
+  async findAll(options: QueryOptions) {
+    const query = this.vehiculesRepository.createQueryBuilder('vehicle');
+
+    // Apply filters
+    if (options.filters.manufacturer) {
+      query.andWhere('vehicle.manufacturer = :manufacturer', {
+        manufacturer: options.filters.manufacturer,
+      });
     }
 
-    if (type) {
-      queryBuilder.andWhere('vehicle.type = :type', { type });
+    if (options.filters.type) {
+      query.andWhere('vehicle.type = :type', {
+        type: options.filters.type,
+      });
     }
 
-    const [vehicles, total] = await queryBuilder
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
+    if (options.filters.year) {
+      query.andWhere('vehicle.year = :year', {
+        year: options.filters.year,
+      });
+    }
+
+    // Apply sorting
+    if (options.sort.field) {
+      query.orderBy(`vehicle.${options.sort.field}`, options.sort.order || 'ASC');
+    }
+
+    // Apply pagination
+    const skip = (options.pagination.page - 1) * options.pagination.limit;
+    query.skip(skip).take(options.pagination.limit);
+
+    // Get total count for pagination
+    const [items, total] = await query.getManyAndCount();
 
     return {
-      data: vehicles,
-      total,
-      page,
-      limit,
+      items,
+      meta: {
+        total,
+        page: options.pagination.page,
+        limit: options.pagination.limit,
+        totalPages: Math.ceil(total / options.pagination.limit),
+      },
     };
   }
 
-  async getVehicleDetails(id: string): Promise<Vehicle> {
-    if (!isUUID(id)) {
-      throw new InvalidUUIDException(id);
-    }
-
-    const vehicle = await this.findOne(id);
-    if (!vehicle) {
-      throw new NotFoundException(`Vehicle with ID "${id}" not found`);
-    }
-    return vehicle;
+  findOne(id: string) {
+    return this.vehiculesRepository.findOneBy({ id });
   }
 
-  async getManufacturers(): Promise<string[]> {
-    const manufacturers = await this.vehiclesRepository
-      .createQueryBuilder('vehicle')
-      .select('DISTINCT vehicle.manufacturer', 'manufacturer')
-      .getRawMany();
-    
-    return manufacturers.map(m => m.manufacturer);
+  update(id: string, updateVehicleDto: UpdateVehicleDto) {
+    return this.vehiculesRepository.update(id, updateVehicleDto);
+  }
+
+  remove(id: string) {
+    return this.vehiculesRepository.delete(id);
   }
 
   getVehiculeTypes(): VehiculeType[] {
     return Object.values(VehiculeType);
   }
 
-  async create(vehicleData: CreateVehicleDto): Promise<Vehicle> {
-    const vehicle = this.vehiclesRepository.create(vehicleData);
-    return await this.vehiclesRepository.save(vehicle);
-  }
-
-  findAll() {
-    return this.vehiclesRepository.find();
-  }
-
-  findOne(id: string) {
-    if (!isUUID(id)) {
-      throw new InvalidUUIDException(id);
-    }
-    return this.vehiclesRepository.findOneBy({ id });
-  }
-
-  async update(id: string, vehicleData: UpdateVehicleDto): Promise<Vehicle> {
-    const vehicle = await this.getVehicleDetails(id);
-    Object.assign(vehicle, vehicleData);
-    return await this.vehiclesRepository.save(vehicle);
-  }
-
-  async remove(id: string): Promise<{ deleted: boolean }> {
-    const result = await this.vehiclesRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Vehicle with ID ${id} not found`);
-    }
-    return { deleted: true };
+  async getManufacturers(): Promise<string[]> {
+    const manufacturers = await this.vehiculesRepository
+      .createQueryBuilder('vehicle')
+      .select('DISTINCT vehicle.manufacturer', 'manufacturer')
+      .getRawMany();
+    
+    return manufacturers.map(m => m.manufacturer);
   }
 }
