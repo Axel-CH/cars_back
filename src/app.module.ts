@@ -1,28 +1,36 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { SeedModule } from './vehicules/seed/seed.module';
 import { VehiculesModule } from './vehicules/vehicules.module';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import databaseConfig from './config/database.config';
+import { VehicleEntity } from './vehicules/entities/vehicle.entity';
+import { UpdateNullImages1703330436000 } from './migrations/UpdateNullImages';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [databaseConfig],
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT, 10) || 5432,
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: process.env.NODE_ENV !== 'production',
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get('database.host'),
+        port: configService.get('database.port'),
+        username: configService.get('database.username'),
+        password: configService.get('database.password'),
+        database: configService.get('database.database'),
+        entities: [VehicleEntity],
+        synchronize: configService.get('database.synchronize'),
+        migrations: [UpdateNullImages1703330436000],
+        migrationsRun: true,
+      }),
+      inject: [ConfigService],
     }),
+    SeedModule,
     VehiculesModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}

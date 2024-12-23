@@ -2,18 +2,30 @@ import { Controller, Get, Post, Body, Param, Delete, Put, Query } from '@nestjs/
 import { VehiculesService } from './vehicules.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
-import { VehicleEntity } from './entities/vehicule.entity';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiProperty } from '@nestjs/swagger';
+import { VehicleEntity } from './entities/vehicle.entity';
 import { VehiculeType } from './types/vehicule.types';
 
+class PaginationMeta {
+  @ApiProperty({ description: 'Total number of items' })
+  total: number;
+
+  @ApiProperty({ description: 'Current page number' })
+  page: number;
+
+  @ApiProperty({ description: 'Number of items per page' })
+  limit: number;
+
+  @ApiProperty({ description: 'Total number of pages' })
+  totalPages: number;
+}
+
 class PaginatedVehicleResponse {
+  @ApiProperty({ type: [VehicleEntity], description: 'Array of vehicles' })
   items: VehicleEntity[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
+
+  @ApiProperty({ type: PaginationMeta })
+  meta: PaginationMeta;
 }
 
 @ApiTags('vehicules')
@@ -103,7 +115,8 @@ export class VehiculesController {
     description: 'Page number for pagination',
     type: Number,
     example: 1,
-    minimum: 1
+    minimum: 1,
+    default: 1
   })
   @ApiQuery({
     name: 'limit',
@@ -112,7 +125,8 @@ export class VehiculesController {
     type: Number,
     example: 10,
     minimum: 1,
-    maximum: 100
+    maximum: 100,
+    default: 10
   })
   findAll(
     @Query('manufacturer') manufacturer?: string,

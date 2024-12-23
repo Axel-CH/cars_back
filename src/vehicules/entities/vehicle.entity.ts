@@ -47,11 +47,11 @@ export class VehicleEntity {
   mileage?: number;
 
   @ApiProperty({ type: [String], description: 'Vehicle features' })
-  @Column('text', { array: true, nullable: false, default: '{}' })
+  @Column('simple-array', { default: [] })
   features: string[];
 
   @ApiProperty({ type: [String], description: 'Vehicle images URLs' })
-  @Column('text', { array: true, nullable: false, default: '{}' })
+  @Column('text', { array: true, default: [] })
   images: string[];
 
   @ApiProperty({ description: 'Vehicle description' })

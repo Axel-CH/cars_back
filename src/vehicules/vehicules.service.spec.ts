@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VehiculesService } from './vehicules.service';
-import { VehicleEntity } from './entities/vehicule.entity';
+import { VehicleEntity } from './entities/vehicle.entity';
 import { NotFoundException } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
 import { VehiculeType, FuelType } from './types/vehicule.types';

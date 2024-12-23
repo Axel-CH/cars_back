@@ -18,9 +18,10 @@ async function bootstrap() {
 
   // Swagger documentation setup
   const config = new DocumentBuilder()
-    .setTitle('Vehicle API')
-    .setDescription('The Vehicle API description')
+    .setTitle('Vehicles API')
+    .setDescription('The vehicles API description')
     .setVersion('1.0')
+    .addTag('vehicules')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
