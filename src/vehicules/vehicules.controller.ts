@@ -6,6 +6,16 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/
 import { VehicleEntity } from './entities/vehicule.entity';
 import { VehiculeType } from './types/vehicule.types';
 
+class PaginatedVehicleResponse {
+  items: VehicleEntity[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 @ApiTags('vehicules')
 @Controller('vehicules')
 export class VehiculesController {
@@ -34,15 +44,76 @@ export class VehiculesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all vehicles with filtering, sorting, and pagination' })
-  @ApiResponse({ status: 200, description: 'Return filtered, sorted and paginated vehicles.', type: [VehicleEntity] })
-  @ApiQuery({ name: 'manufacturer', required: false, description: 'Filter by manufacturer' })
-  @ApiQuery({ name: 'type', required: false, description: 'Filter by vehicle type' })
-  @ApiQuery({ name: 'year', required: false, description: 'Filter by year' })
-  @ApiQuery({ name: 'sortBy', required: false, enum: ['price', 'year'], description: 'Sort by field' })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'], description: 'Sort order' })
-  @ApiQuery({ name: 'page', required: false, description: 'Page number (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Items per page (default: 10)' })
+  @ApiOperation({
+    summary: 'Get all vehicles with filtering, sorting, and pagination',
+    description: `
+    Retrieve a list of vehicles with optional filtering, sorting, and pagination.
+    
+    Examples:
+    - Filter by manufacturer: /vehicules?manufacturer=Toyota
+    - Filter by type and year: /vehicules?type=SEDAN&year=2023
+    - Sort by price descending: /vehicules?sortBy=price&sortOrder=DESC
+    - Paginate results: /vehicules?page=1&limit=10
+    
+    All parameters are optional and can be combined.
+    `
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Return filtered, sorted and paginated vehicles.',
+    type: PaginatedVehicleResponse
+  })
+  @ApiQuery({
+    name: 'manufacturer',
+    required: false,
+    description: 'Filter vehicles by manufacturer name',
+    example: 'Toyota'
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: 'Filter vehicles by type',
+    enum: VehiculeType,
+    example: VehiculeType.SEDAN
+  })
+  @ApiQuery({
+    name: 'year',
+    required: false,
+    description: 'Filter vehicles by manufacturing year',
+    type: Number,
+    example: 2023
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    description: 'Field to sort by',
+    enum: ['price', 'year'],
+    example: 'price'
+  })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    description: 'Sort order (ascending or descending)',
+    enum: ['ASC', 'DESC'],
+    example: 'DESC'
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number for pagination',
+    type: Number,
+    example: 1,
+    minimum: 1
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page',
+    type: Number,
+    example: 10,
+    minimum: 1,
+    maximum: 100
+  })
   findAll(
     @Query('manufacturer') manufacturer?: string,
     @Query('type') type?: string,
